@@ -1,0 +1,17 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #2c2c2c;
+  color: #fff; /* <— важно: текст белый */
+  padding: 16px;
+  border-right: 1px solid #ddd;
+}
+
+.notesWrapper {
+  width: 100%;
+}

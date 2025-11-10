@@ -1,15 +1,18 @@
 'use client';
 
+import { createNote } from "@/lib/api";
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createNote } from '@/lib/api';
+import type { CreateNotePayload } from "@/lib/api";
 import type { CreateNoteDto, NoteTag } from '@/types/note';
 import css from './NoteForm.module.css';
 
 interface NoteFormProps {
-  onCancel?: () => void;
-  onSuccess?: () => void;
+  onSuccess: (payload: CreateNotePayload) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+  errorMsg?: string;
 }
 
 const TAG_OPTIONS: NoteTag[] = ['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'];
@@ -36,10 +39,10 @@ export default function NoteForm({ onCancel, onSuccess }: NoteFormProps) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (dto: CreateNoteDto) => createNote(dto),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['notes'] });
-      onSuccess?.();
+    mutationFn: (dto: CreateNotePayload) => createNote(dto),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ["notes"] });
+      onSuccess?.(variables);
     },
   });
 
@@ -49,10 +52,10 @@ export default function NoteForm({ onCancel, onSuccess }: NoteFormProps) {
       validationSchema={Schema}
       onSubmit={(values, { resetForm }) => {
         const payload: CreateNoteDto = {
-  title: values.title,
-  content: values.content,
-  tag: values.tag as NoteTag,
-};
+          title: values.title,
+          content: values.content,
+          tag: values.tag as NoteTag,
+        };
         mutation.mutate(payload, {
           onSuccess: () => {
             resetForm();

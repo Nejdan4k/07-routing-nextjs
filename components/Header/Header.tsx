@@ -1,21 +1,34 @@
-'use client';
+import Link from "next/link";
+import TagsMenu from "@/components/TagsMenu/TagsMenu";
+import css from "./Header.module.css";
 
-import Link from 'next/link';
-import css from './Header.module.css';
-
-export function Header() {
+export default function Header() {
   return (
     <header className={css.header}>
-      <Link href="/" aria-label="Home">
+      {/* Логотип веде на головну */}
+      <Link href="/" aria-label="Home" className={css.headerLink}>
         NoteHub
       </Link>
+
+      {/* Основна навігація */}
       <nav aria-label="Main Navigation">
         <ul className={css.navigation}>
-          <li>
-            <Link href="/">Home</Link>
+          <li className={css.navigationItem}>
+            <Link href="/" className={css.navigationLink}>
+              Home
+            </Link>
           </li>
-          <li>
-            <Link href="/notes">Notes</Link>
+
+          <li className={css.navigationItem}>
+            {/* ✅ Додано пряме посилання на /notes/filter/all */}
+            <Link href="/notes/filter/all" className={css.navigationLink}>
+              All notes
+            </Link>
+          </li>
+
+          <li className={css.navigationItem}>
+            {/* Додатково залишено TagsMenu, якщо потрібно */}
+            <TagsMenu />
           </li>
         </ul>
       </nav>
