@@ -9,9 +9,9 @@ export default function FilterLayout({
   sidebar: ReactNode;
 }) {
   return (
-    <div className={css.wrapper}>
+    <div className={css.container}>
       <aside className={css.sidebar}>{sidebar}</aside>
-      <main className={css.content}>{children}</main>
+      <main className={css.notesWrapper}>{children}</main>
     </div>
   );
 }
