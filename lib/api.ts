@@ -1,6 +1,8 @@
 import axios, { type AxiosInstance } from "axios";
 import type { Note } from "@/types/note";
 
+/** ---- Env & Axios instance -------------------------------------------- */
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "https://notehub-public.goit.study/api";
 const token = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN;
@@ -9,9 +11,11 @@ export const instance: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}), // токен тільки якщо є
   },
 });
+
+/** ---- Types ------------------------------------------------------------ */
 
 export interface PaginatedNotesResponse {
   notes: Note[];
@@ -25,9 +29,10 @@ export interface FetchNotesParams {
   q?: string;
   page?: number;
   perPage?: number;
-  tag?: string | null;
+  tag?: string | null; // 'all' не відправляємо
 }
 
+/** Базовий тип для створення/оновлення нотатки */
 export interface CreateNoteDto {
   title: string;
   content: string;
@@ -35,11 +40,19 @@ export interface CreateNoteDto {
   tags?: string[];
 }
 
+/** ⚠️ АЛІАС під очікувану назву з Notes.client.tsx */
+export type CreateNotePayload = CreateNoteDto;
+
+/** ---- Helpers ---------------------------------------------------------- */
+
 function normalizeTag(tag?: string | null): string | undefined {
   if (!tag || tag === "all") return undefined;
   return tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
 }
 
+/** ---- API methods ------------------------------------------------------ */
+
+/** Список з пошуком/пагінацією/тегом */
 export async function fetchNotes(
   params: FetchNotesParams = {}
 ): Promise<PaginatedNotesResponse> {
@@ -60,13 +73,15 @@ export async function fetchNotes(
   return data;
 }
 
+/** Одна нотатка за id */
 export async function fetchNoteById(id: string): Promise<Note> {
   const safe = encodeURIComponent(id);
   const { data } = await instance.get<Note>(`/notes/${safe}`);
   return data;
 }
 
-export async function createNote(payload: CreateNoteDto): Promise<Note> {
+/** Створення нотатки */
+export async function createNote(payload: CreateNotePayload): Promise<Note> {
   const body: Record<string, unknown> = {
     title: payload.title,
     content: payload.content,
@@ -82,9 +97,10 @@ export async function createNote(payload: CreateNoteDto): Promise<Note> {
   return data;
 }
 
+/** Оновлення нотатки (якщо потрібно) */
 export async function updateNote(
   id: string,
-  payload: Partial<CreateNoteDto>
+  payload: Partial<CreateNotePayload>
 ): Promise<Note> {
   const safe = encodeURIComponent(id);
   const body: Record<string, unknown> = {};
@@ -102,6 +118,7 @@ export async function updateNote(
   return data;
 }
 
+/** Видалення нотатки */
 export async function deleteNote(id: string): Promise<Note> {
   const safe = encodeURIComponent(id);
   const { data } = await instance.delete<Note>(`/notes/${safe}`);
