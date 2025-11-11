@@ -1,7 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { deleteNote, type PaginatedNotesResponse } from "@/lib/api";
 import type { Note } from "@/types/note";
 import css from "./NoteList.module.css";
@@ -9,6 +14,11 @@ import css from "./NoteList.module.css";
 export interface NoteListProps {
   notes: Note[];
   enableDelete?: boolean;
+}
+
+// Допоміжне: беремо універсальний id без any
+function getNoteId(n: Note): string {
+  return String(n.id ?? n._id ?? "");
 }
 
 export default function NoteList({
@@ -23,11 +33,20 @@ export default function NoteList({
     variables: deletingId,
     isError,
     error,
-  } = useMutation({
-    mutationFn: (id: string | number) => deleteNote(String(id)),
+  } = useMutation<
+    // TData
+    unknown,
+    // TError
+    AxiosError,
+    // TVariables
+    string,
+    // TContext
+    { prev: Array<[QueryKey, PaginatedNotesResponse | undefined]> }
+  >({
+    mutationFn: (id: string) => deleteNote(id),
 
-    
-    onMutate: async (id: string | number) => {
+    // оптимістичне видалення
+    onMutate: async (id: string) => {
       await qc.cancelQueries({ queryKey: ["notes"] });
 
       const prev = qc.getQueriesData<PaginatedNotesResponse>({
@@ -38,14 +57,13 @@ export default function NoteList({
         if (!data) return;
         qc.setQueryData<PaginatedNotesResponse>(key, {
           ...data,
-          notes: data.notes.filter((n) => String(n.id) !== String(id)),
+          notes: data.notes.filter((n) => getNoteId(n) !== id),
         });
       });
 
-      return { prev };
+      return { prev: prev as Array<[QueryKey, PaginatedNotesResponse | undefined]> };
     },
 
-    
     onError: (_err, _id, ctx) => {
       if (!ctx?.prev) return;
       ctx.prev.forEach(([key, data]) => {
@@ -53,7 +71,6 @@ export default function NoteList({
       });
     },
 
-    
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["notes"] });
     },
@@ -64,17 +81,17 @@ export default function NoteList({
   return (
     <ul className={css.list}>
       {notes.map((n) => {
-        const pending = isPending && String(deletingId) === String(n.id);
+        const noteId = getNoteId(n);
+        const pending = isPending && String(deletingId) === noteId;
 
         return (
-          <li key={n.id} className={css.listItem}>
+          <li key={noteId} className={css.listItem}>
             <h3 className={css.title}>{n.title}</h3>
             <p className={css.content}>{n.content}</p>
 
             <div className={css.footer}>
-              
               <div className={css.tagsContainer}>
-                {n.tags?.length > 0 ? (
+                {n.tags?.length ? (
                   n.tags.map((t) => (
                     <span key={t} className={css.tag} title={t}>
                       {t}
@@ -86,14 +103,17 @@ export default function NoteList({
               </div>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <Link className={css.link} href={`/notes/${n.id}`}>
+                <Link
+                  className={css.link}
+                  href={`/notes/${encodeURIComponent(noteId)}`}
+                >
                   View details
                 </Link>
 
                 {enableDelete && (
                   <button
                     className={css.button}
-                    onClick={() => mutate(n.id)}
+                    onClick={() => mutate(noteId)}
                     disabled={pending}
                     aria-busy={pending}
                   >
@@ -103,9 +123,13 @@ export default function NoteList({
               </div>
             </div>
 
-            {isError && String(deletingId) === String(n.id) && (
+            {isError && String(deletingId) === noteId && (
               <p className={css.error}>
-                {(error as Error)?.message ?? "Failed to delete note"}
+                {error?.response?.data && typeof error.response.data === "object"
+                  ? // якщо бек вернув {message: "..."}
+                    // @ts-expect-error — узагальнений guard
+                    (error.response.data.message as string) ?? error.message
+                  : error?.message ?? "Failed to delete note"}
               </p>
             )}
           </li>
