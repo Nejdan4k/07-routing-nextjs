@@ -11,7 +11,7 @@ export function Footer() {
           <p>Developer: Stryzhavchuk Anton</p>
           <p>
             Contact us:{' '}
-            <a href="mailto:student@notehub.app">student@notehub.app</a>
+            <a href="mailto:student@notehub.app">mailto:student@notehub.app</a>
           </p>
         </div>
       </div>

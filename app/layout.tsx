@@ -11,19 +11,30 @@ export const metadata = {
 
 export default function RootLayout({
   children,
-  modal,            // ⬅️ паралельний слот
+  modal,
 }: {
   children: ReactNode;
-  modal: ReactNode; // ⬅️ типізація
+  modal: ReactNode;
 }) {
   return (
     <html lang="en">
       <body>
         <TanStackProvider>
-          <Header />
-          {children}
-          {modal}     {/* ⬅️ обов’язково рендеримо */}
-          <Footer />
+          <div
+            style={{
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              backgroundColor: "#f8f9fa",
+            }}
+          >
+            <Header />
+            <main style={{ flex: 1, position: "relative" }}>
+              {children}
+              {modal}
+            </main>
+            <Footer />
+          </div>
         </TanStackProvider>
       </body>
     </html>
